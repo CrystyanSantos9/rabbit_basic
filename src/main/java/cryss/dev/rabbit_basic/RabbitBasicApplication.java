@@ -1,6 +1,8 @@
 package cryss.dev.rabbit_basic;
 
 import cryss.dev.rabbit_basic.config.rabbit.RabbitConfigBase;
+import cryss.dev.rabbit_basic.consumer.ExcelConsumer;
+import cryss.dev.rabbit_basic.producer.ExcelProducer;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class RabbitBasicApplication implements CommandLineRunner {
 
 	@Autowired
-	private RabbitTemplate template;
+	private ExcelProducer producer;
 
 	public static void main(String[] args) {
 		SpringApplication.run(RabbitBasicApplication.class, args);
@@ -25,8 +27,9 @@ public class RabbitBasicApplication implements CommandLineRunner {
 
 	@Scheduled(fixedDelay = 2, timeUnit = TimeUnit.SECONDS)
 	private void publicMessage(){
-		Message msgRabbitInBytes = new Message ("algo".getBytes ());
-		template.send (RabbitConfigBase.EXCEL_FILE_IMPORTED, msgRabbitInBytes);
+
+		producer.sendMessage (1L);
+
 	}
 	@Override
 	public void run(String... args) throws Exception {
