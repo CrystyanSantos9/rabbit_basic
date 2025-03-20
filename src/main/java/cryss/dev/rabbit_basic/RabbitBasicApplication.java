@@ -2,6 +2,7 @@ package cryss.dev.rabbit_basic;
 
 import cryss.dev.rabbit_basic.config.rabbit.RabbitConfigBase;
 import cryss.dev.rabbit_basic.consumer.ExcelConsumer;
+import cryss.dev.rabbit_basic.event.ExcelCreatedEvent;
 import cryss.dev.rabbit_basic.producer.ExcelProducer;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -27,8 +28,8 @@ public class RabbitBasicApplication implements CommandLineRunner {
 
 	@Scheduled(fixedDelay = 2, timeUnit = TimeUnit.SECONDS)
 	private void publicMessage(){
-
-		producer.sendMessage (1L);
+		ExcelCreatedEvent event = new ExcelCreatedEvent ("1");
+		producer.excelCreatedPublish (event);
 
 	}
 	@Override

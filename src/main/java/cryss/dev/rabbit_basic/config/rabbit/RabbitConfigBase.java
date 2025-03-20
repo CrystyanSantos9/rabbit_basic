@@ -45,6 +45,8 @@ public class RabbitConfigBase {
         return event -> rabbitAdmin.initialize ();
     }
 
+    //SERIALIZAR MENSAGENS
+
 
     //LISTERNER CONTAINER https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/using-container-factories.html
 

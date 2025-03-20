@@ -1,5 +1,6 @@
 package cryss.dev.rabbit_basic.producer;
 
+import cryss.dev.rabbit_basic.event.ExcelCreatedEvent;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ public class ExcelProducer {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
-    public void sendMessage(Long message){
-        rabbitTemplate.convertAndSend (EXCEL_FILE_IMPORTED, message);
+    public void excelCreatedPublish(ExcelCreatedEvent event){
+        rabbitTemplate.convertAndSend (EXCEL_FILE_IMPORTED, event);
     }
 }
