@@ -3,6 +3,7 @@ package cryss.dev.rabbit_basic.config.rabbit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -25,13 +26,19 @@ public class RabbitConfigBase {
     Jackson2ObjectMapperBuilder jackson2ObjectMapperBuilder;
 
     @Autowired RabbitProperties rabbitProperties;
-        public static final String FANAUT_EXCHANGE_NAME = "excel.exchange.fanout.events";
+        public static final String EXCEL_FANOUT_EXCHANGE_NAME = "excel.exchange.fanout.events";
         public static final String EXCEL_FILE_IMPORTED = "excel.v1.queue.file_imported";
 
-    @Bean
-    public Queue fileImportedQueue() {
-        return new Queue (EXCEL_FILE_IMPORTED);
-    }
+
+        @Bean
+        public FanoutExchange fanoutExchange(){
+            return new FanoutExchange (EXCEL_FANOUT_EXCHANGE_NAME);
+        }
+
+//    @Bean
+//    public Queue fileImportedQueue() {
+//        return new Queue (EXCEL_FILE_IMPORTED);
+//    }
 
 
     @Bean
