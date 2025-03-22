@@ -8,19 +8,19 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Date;
 
 
 @Data
-@Getter
 public class ExcelCreatedEvent implements Serializable {
 
     private String id;
+    private String path;
 
     @JsonSerialize(as = LocalDateTime.class)
     @JsonFormat(shape=JsonFormat.Shape.STRING ,pattern = "dd/MM/yyyy HH:mm:ss")
-//    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
     private LocalDateTime createdAt = LocalDateTime.now ();
 
     public ExcelCreatedEvent() {

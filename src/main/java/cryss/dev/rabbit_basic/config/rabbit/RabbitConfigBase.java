@@ -3,8 +3,11 @@ package cryss.dev.rabbit_basic.config.rabbit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -30,16 +33,20 @@ public class RabbitConfigBase {
         public static final String EXCEL_FILE_IMPORTED = "excel.v1.queue.file_imported";
 
 
-        @Bean
-        public FanoutExchange fanoutExchange(){
-            return new FanoutExchange (EXCEL_FANOUT_EXCHANGE_NAME);
-        }
+    @Bean
+    public FanoutExchange fanoutExchange() {
+        return new FanoutExchange (EXCEL_FANOUT_EXCHANGE_NAME);
+    }
 
-//    @Bean
-//    public Queue fileImportedQueue() {
-//        return new Queue (EXCEL_FILE_IMPORTED);
-//    }
+    @Bean
+    public Queue fileImportedQueue() {
+        return new Queue (EXCEL_FILE_IMPORTED);
+    }
 
+    @Bean
+    public Binding bindWithExcelCreatedEvent(){
+        return BindingBuilder.bind (fileImportedQueue ()).to (fanoutExchange ());
+    }
 
     @Bean
     @Primary
@@ -81,18 +88,19 @@ public class RabbitConfigBase {
 
     //LISTERNER CONTAINER https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/using-container-factories.html
 
-//    @Bean
-//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
-//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-//        factory.setConnectionFactory(getCachedConnection());
-//        factory.setConcurrentConsumers(3);
-////        factory.setMessageConverter (messageConverter());
-//        factory.setMaxConcurrentConsumers(10);
-//        factory.setContainerCustomizer(container ->
-//                container.addQueues (fileImportedQueue())
-//        );
-//        return factory;
-//    }
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(getCachedConnection());
+        factory.setConcurrentConsumers(3);
+        factory.setMessageConverter (messageConverter());
+        factory.setMaxConcurrentConsumers(10);
+        factory.setContainerCustomizer(container ->
+                container.addQueues (fileImportedQueue())
+        );
+//        factory.setDefaultRequeueRejected (Boolean.FALSE);
+        return factory;
+    }
 
 
 }

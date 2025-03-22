@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @EnableScheduling
-public class RabbitBasicApplication implements CommandLineRunner {
+public class RabbitBasicApplication {
 
 	@Autowired
 	private ExcelProducer producer;
@@ -31,9 +31,5 @@ public class RabbitBasicApplication implements CommandLineRunner {
 		ExcelCreatedEvent event = new ExcelCreatedEvent ("1");
 		producer.excelCreatedPublish (event);
 
-	}
-	@Override
-	public void run(String... args) throws Exception {
-		publicMessage ();
 	}
 }
