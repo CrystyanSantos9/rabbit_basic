@@ -3,32 +3,45 @@ package cryss.dev.rabbit_basic.config.rabbit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.RabbitRetryTemplateCustomizer;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
 import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.backoff.BackOffPolicy;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
+import java.util.Map;
+
 @Configuration
+@Log4j2
 public class RabbitConfigBase {
 
     @Autowired
@@ -95,9 +108,9 @@ public class RabbitConfigBase {
     }
 
     @Bean
-    RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter messageConverter){
-        RabbitTemplate rabbitTemplate = new RabbitTemplate (connectionFactory);
-        rabbitTemplate.setMessageConverter (messageConverter);
+    RabbitTemplate rabbitTemplate(){
+        RabbitTemplate rabbitTemplate = new RabbitTemplate (getCachedConnection());
+        rabbitTemplate.setMessageConverter (messageConverter());
 
         RetryTemplate retryTemplate = new RetryTemplate();
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
@@ -119,13 +132,17 @@ public class RabbitConfigBase {
     public RetryTemplate simpleListenerRetryTemplate(){
 
         RetryTemplate retryTemplate = new RetryTemplate();
+
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy ();
         backOffPolicy.setInitialInterval (5000);
         backOffPolicy.multiplierSupplier (() -> 2.0D);
         backOffPolicy.setMaxInterval (10000);
-        retryTemplate.setBackOffPolicy (backOffPolicy);
+
+
         SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
         retryPolicy.setMaxAttempts(3);
+
+        retryTemplate.setBackOffPolicy (backOffPolicy);
         retryTemplate.setRetryPolicy (retryPolicy);
 
 
@@ -137,20 +154,43 @@ public class RabbitConfigBase {
         return retryTemplate;
     }
 
-//    @Bean
-//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
-//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-//        factory.setConnectionFactory(getSimpleListenerCachedConnection());
-//        factory.setConcurrentConsumers(3);
-//        factory.setMessageConverter (messageConverter());
-//        factory.setMaxConcurrentConsumers(10);
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(getSimpleListenerCachedConnection());
+        factory.setConcurrentConsumers(3);
+        factory.setMessageConverter (messageConverter());
+        factory.setMaxConcurrentConsumers(10);
 //        factory.setContainerCustomizer(container ->
 //                container.addQueues (fileImportedQueue())
 //        );
-//        factory.setDefaultRequeueRejected (Boolean.FALSE);
-//        factory.setRetryTemplate (simpleListenerRetryTemplate());
-//        return factory;
-//    }
+        factory.setRetryTemplate (simpleListenerRetryTemplate());
+        factory.setDefaultRequeueRejected (Boolean.FALSE);
+
+        return factory;
+    }
+
+    @Bean
+    public SimpleMessageListenerContainer factoryCreatedContainerSimpleListener() {
+        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
+        endpoint.setQueueNames("excel.v1.queue.file_imported");
+        endpoint.setMessageListener(message -> {
+            log.info (message.getMessageProperties ().toString ());
+            log.info (new String (message.getBody ()));
+            throw new IllegalArgumentException ("Path attribute can be a null value.");
+        });
+        return rabbitListenerContainerFactory().createListenerContainer(endpoint);
+    }
+
+
+    int counter =0;
+
+    private void verifyNwConfiguration(){
+        counter++;
+        log.info("N/W configuration Service Failed "+ counter);
+        throw new RuntimeException();
+    }
+
 
 
 }
