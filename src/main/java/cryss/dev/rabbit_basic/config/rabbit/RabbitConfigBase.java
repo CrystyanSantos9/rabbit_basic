@@ -7,6 +7,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -21,6 +22,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.BackOffPolicy;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 @Configuration
 public class RabbitConfigBase {
@@ -58,8 +64,18 @@ public class RabbitConfigBase {
         return connectionFactory;
     }
 
-
     @Bean
+    CachingConnectionFactory getSimpleListenerCachedConnection() {
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory (rabbitProperties.getHost ());
+        connectionFactory.setUsername (rabbitProperties.getUsername ());
+        connectionFactory.setPassword (rabbitProperties.getPassword ());
+        connectionFactory.setConnectionNameStrategy (connection -> "LISTENER_CONNECTION");
+        return connectionFactory;
+    }
+
+
+
+        @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory){
         return new RabbitAdmin (connectionFactory);
     }
@@ -83,24 +99,58 @@ public class RabbitConfigBase {
         RabbitTemplate rabbitTemplate = new RabbitTemplate (connectionFactory);
         rabbitTemplate.setMessageConverter (messageConverter);
 
+        RetryTemplate retryTemplate = new RetryTemplate();
+        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+        backOffPolicy.setInitialInterval(500);
+        backOffPolicy.setMultiplier(10.0);
+        backOffPolicy.setMaxInterval(10000);
+        retryTemplate.setBackOffPolicy(backOffPolicy);
+        rabbitTemplate.setRetryTemplate(retryTemplate);
+        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+        retryPolicy.setMaxAttempts(3);
+
+
         return rabbitTemplate;
     }
 
     //LISTERNER CONTAINER https://docs.spring.io/spring-amqp/reference/amqp/receiving-messages/using-container-factories.html
 
     @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
-        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-        factory.setConnectionFactory(getCachedConnection());
-        factory.setConcurrentConsumers(3);
-        factory.setMessageConverter (messageConverter());
-        factory.setMaxConcurrentConsumers(10);
-        factory.setContainerCustomizer(container ->
-                container.addQueues (fileImportedQueue())
-        );
-//        factory.setDefaultRequeueRejected (Boolean.FALSE);
-        return factory;
+    public RetryTemplate simpleListenerRetryTemplate(){
+
+        RetryTemplate retryTemplate = new RetryTemplate();
+        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy ();
+        backOffPolicy.setInitialInterval (5000);
+        backOffPolicy.multiplierSupplier (() -> 2.0D);
+        backOffPolicy.setMaxInterval (10000);
+        retryTemplate.setBackOffPolicy (backOffPolicy);
+        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+        retryPolicy.setMaxAttempts(3);
+        retryTemplate.setRetryPolicy (retryPolicy);
+
+
+//        return RetryTemplate.builder ()
+//                .exponentialBackoff (5000, 2D, 10000)
+//                .build ();
+////                .customPolicy (retryPolicy)
+////                .customBackoff (backOffPolicy).build ();
+        return retryTemplate;
     }
+
+//    @Bean
+//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+//        factory.setConnectionFactory(getSimpleListenerCachedConnection());
+//        factory.setConcurrentConsumers(3);
+//        factory.setMessageConverter (messageConverter());
+//        factory.setMaxConcurrentConsumers(10);
+//        factory.setContainerCustomizer(container ->
+//                container.addQueues (fileImportedQueue())
+//        );
+//        factory.setDefaultRequeueRejected (Boolean.FALSE);
+//        factory.setRetryTemplate (simpleListenerRetryTemplate());
+//        return factory;
+//    }
 
 
 }

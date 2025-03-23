@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Log4j2
 public class ExcelConsumer {
-    @RabbitListener(queues = "excel.v1.queue.file_imported", containerFactory = "rabbitListenerContainerFactory")
+//    @RabbitListener(queues = "excel.v1.queue.file_imported", containerFactory = "rabbitListenerContainerFactory")
+    @RabbitListener(queues = "excel.v1.queue.file_imported")
     public void onExcelFileImported(ExcelCreatedEvent event) {
         if (event.getPath () == null) {
             throw new IllegalArgumentException ("Path attribute can be a null value.");

@@ -16,20 +16,23 @@ import org.springframework.scheduling.annotation.Scheduled;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
-@EnableScheduling
-public class RabbitBasicApplication {
+//@EnableScheduling
+public class RabbitBasicApplication implements CommandLineRunner {
 
 	@Autowired
-	private ExcelProducer producer;
+	private ExcelProducer excelProducer;
 
 	public static void main(String[] args) {
 		SpringApplication.run(RabbitBasicApplication.class, args);
 	}
 
-	@Scheduled(fixedDelay = 2, timeUnit = TimeUnit.SECONDS)
+//	@Scheduled(fixedDelay = 2, timeUnit = TimeUnit.SECONDS)
 	private void publicMessage(){
-		ExcelCreatedEvent event = new ExcelCreatedEvent ("1");
-		producer.excelCreatedPublish (event);
+		excelProducer.excelCreatedPublish (new ExcelCreatedEvent ("1"));
+	}
 
+	@Override
+	public void run(String... args) throws Exception {
+		publicMessage ();
 	}
 }
