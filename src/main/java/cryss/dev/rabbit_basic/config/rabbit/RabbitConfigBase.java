@@ -154,33 +154,33 @@ public class RabbitConfigBase {
         return retryTemplate;
     }
 
-    @Bean
-    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
-        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
-        factory.setConnectionFactory(getSimpleListenerCachedConnection());
-        factory.setConcurrentConsumers(3);
-        factory.setMessageConverter (messageConverter());
-        factory.setMaxConcurrentConsumers(10);
-//        factory.setContainerCustomizer(container ->
-//                container.addQueues (fileImportedQueue())
-//        );
-        factory.setRetryTemplate (simpleListenerRetryTemplate());
-        factory.setDefaultRequeueRejected (Boolean.FALSE);
+//    @Bean
+//    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory() {
+//        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+//        factory.setConnectionFactory(getSimpleListenerCachedConnection());
+//        factory.setConcurrentConsumers(3);
+//        factory.setMessageConverter (messageConverter());
+//        factory.setMaxConcurrentConsumers(10);
+////        factory.setContainerCustomizer(container ->
+////                container.addQueues (fileImportedQueue())
+////        );
+//        factory.setRetryTemplate (simpleListenerRetryTemplate());
+//        factory.setDefaultRequeueRejected (Boolean.FALSE);
+//
+//        return factory;
+//    }
 
-        return factory;
-    }
-
-    @Bean
-    public SimpleMessageListenerContainer factoryCreatedContainerSimpleListener() {
-        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
-        endpoint.setQueueNames("excel.v1.queue.file_imported");
-        endpoint.setMessageListener(message -> {
-            log.info (message.getMessageProperties ().toString ());
-            log.info (new String (message.getBody ()));
-            throw new IllegalArgumentException ("Path attribute can be a null value.");
-        });
-        return rabbitListenerContainerFactory().createListenerContainer(endpoint);
-    }
+//    @Bean
+//    public SimpleMessageListenerContainer factoryCreatedContainerSimpleListener() {
+//        SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
+//        endpoint.setQueueNames("excel.v1.queue.file_imported");
+//        endpoint.setMessageListener(message -> {
+//            log.info (message.getMessageProperties ().toString ());
+//            log.info (new String (message.getBody ()));
+//            throw new IllegalArgumentException ("Path attribute can be a null value.");
+//        });
+//        return rabbitListenerContainerFactory().createListenerContainer(endpoint);
+//    }
 
 
     int counter =0;

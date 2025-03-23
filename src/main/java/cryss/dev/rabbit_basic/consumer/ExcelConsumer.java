@@ -11,8 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Log4j2
 public class ExcelConsumer {
-    @RabbitListener
-//    @RabbitListener(queues = "excel.v1.queue.file_imported")
+    @RabbitListener(queues = "excel.v1.queue.file_imported")
 //    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1_000, multiplier = 1.5, maxDelay = 10_000))
     public void onExcelFileImported(ExcelCreatedEvent event) {
         if (event.getPath () == null) {
